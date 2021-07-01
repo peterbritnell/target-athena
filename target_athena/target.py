@@ -31,6 +31,7 @@ class TargetAthena(Target):
         th.Property("delimiter", th.StringType, default=","),
         th.Property("quotechar", th.StringType, default='"'),
         th.Property("temp_dir", th.StringType),
+        th.Property("datetime_error_treatment", th.StringType, default='ERROR'),
     ).to_dict()
     default_sink_class = AthenaSink
 
