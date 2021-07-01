@@ -57,7 +57,7 @@ class AthenaSink(Sink):
     #@Sink.datetime_error_treatment
     @property
     def datetime_error_treatment(self):
-        return "null" #self.config.get("datetime_error_treatment", "error")
+        return DatetimeErrorTreatmentEnum.NULL #self.config.get("datetime_error_treatment", "error")
 
     def _validate_record(self, record: Dict) -> Dict:
         """Validate or repair the record."""
