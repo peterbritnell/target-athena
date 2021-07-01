@@ -59,41 +59,41 @@ class AthenaSink(Sink):
     def datetime_error_treatment(self):
         return DatetimeErrorTreatmentEnum.NULL #self.config.get("datetime_error_treatment", "error")
 
-    def _validate_record(self, record: Dict) -> Dict:
-        """Validate or repair the record."""
-        self._validate_timestamps_in_record(
-            record=record, schema=self.schema, treatment=self.datetime_error_treatment
-        )
-        return record
+    # def _validate_record(self, record: Dict) -> Dict:
+    #     """Validate or repair the record."""
+    #     self._validate_timestamps_in_record(
+    #         record=record, schema=self.schema, treatment=self.datetime_error_treatment
+    #     )
+    #     return record
 
-    def _validate_timestamps_in_record(
-        self, record: Dict, schema: Dict, treatment: DatetimeErrorTreatmentEnum
-    ) -> None:
-        """Confirm or repair date or timestamp values in record.
+    # def _validate_timestamps_in_record(
+    #     self, record: Dict, schema: Dict, treatment: DatetimeErrorTreatmentEnum
+    # ) -> None:
+    #     """Confirm or repair date or timestamp values in record.
 
-        Goes through every field that is of type date/datetime/time and if its value is
-        out of range, send it to self._handle_invalid_timestamp_in_record() and use the
-        return value as replacement.
-        """
+    #     Goes through every field that is of type date/datetime/time and if its value is
+    #     out of range, send it to self._handle_invalid_timestamp_in_record() and use the
+    #     return value as replacement.
+    #     """
 
-        self.logger.warning(f"treatment is set as {treatment}")
-        for key in record.keys():
-            datelike_type = get_datelike_property_type(key, schema["properties"][key])
-            if datelike_type:
-                try:
-                    date_val = record[key]
-                    date_val = parser.parse(date_val)
-                except Exception as ex:
-                    date_val = handle_invalid_timestamp_in_record(
-                        record,
-                        [key],
-                        date_val,
-                        datelike_type,
-                        ex,
-                        treatment,
-                        self.logger,
-                    )
-                record[key] = date_val
+    #     self.logger.warning(f"treatment is set as {treatment}")
+    #     for key in record.keys():
+    #         datelike_type = get_datelike_property_type(key, schema["properties"][key])
+    #         if datelike_type:
+    #             try:
+    #                 date_val = record[key]
+    #                 date_val = parser.parse(date_val)
+    #             except Exception as ex:
+    #                 date_val = handle_invalid_timestamp_in_record(
+    #                     record,
+    #                     [key],
+    #                     date_val,
+    #                     datelike_type,
+    #                     ex,
+    #                     treatment,
+    #                     self.logger,
+    #                 )
+    #             record[key] = date_val
 
     def drain(self, records_to_drain: List[dict]) -> None:
         """Write any prepped records out and return only once fully written."""
