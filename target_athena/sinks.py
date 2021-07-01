@@ -75,7 +75,8 @@ class AthenaSink(Sink):
         out of range, send it to self._handle_invalid_timestamp_in_record() and use the
         return value as replacement.
         """
-        print(f"treatment is set as {treatment}")
+
+        self.logger.warning(f"treatment is set as {treatment}")
         for key in record.keys():
             datelike_type = get_datelike_property_type(key, schema["properties"][key])
             if datelike_type:
