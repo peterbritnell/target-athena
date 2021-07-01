@@ -46,9 +46,10 @@ class AthenaSink(Sink):
             self._athena_client = athena.create_client(self.config, self.logger)
         return self._athena_client
 
-    @Sink.datetime_error_treatment
+    #@Sink.datetime_error_treatment
+    @property
     def datetime_error_treatment(self):
-        return self.config.get("datetime_error_treatment", "error")
+        return "null" #self.config.get("datetime_error_treatment", "error")
 
     def drain(self, records_to_drain: List[dict]) -> None:
         """Write any prepped records out and return only once fully written."""
