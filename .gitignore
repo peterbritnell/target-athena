@@ -4,7 +4,8 @@
 # IDE
 .vscode
 .idea/*
-
+.venv/*
+.venv-tap/*
 
 # Python
 __pycache__/
@@ -34,3 +35,6 @@ tmp
 # Docs
 docs/_build/
 docs/_templates/
+
+#temp
+README2.md

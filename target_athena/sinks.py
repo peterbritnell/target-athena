@@ -54,46 +54,10 @@ class AthenaSink(Sink):
             self._athena_client = athena.create_client(self.config, self.logger)
         return self._athena_client
 
-    #@Sink.datetime_error_treatment
     @property
     def datetime_error_treatment(self):
-        return DatetimeErrorTreatmentEnum.NULL #self.config.get("datetime_error_treatment", "error")
-
-    # def _validate_record(self, record: Dict) -> Dict:
-    #     """Validate or repair the record."""
-    #     self._validate_timestamps_in_record(
-    #         record=record, schema=self.schema, treatment=self.datetime_error_treatment
-    #     )
-    #     return record
-
-    # def _validate_timestamps_in_record(
-    #     self, record: Dict, schema: Dict, treatment: DatetimeErrorTreatmentEnum
-    # ) -> None:
-    #     """Confirm or repair date or timestamp values in record.
-
-    #     Goes through every field that is of type date/datetime/time and if its value is
-    #     out of range, send it to self._handle_invalid_timestamp_in_record() and use the
-    #     return value as replacement.
-    #     """
-
-    #     self.logger.warning(f"treatment is set as {treatment}")
-    #     for key in record.keys():
-    #         datelike_type = get_datelike_property_type(key, schema["properties"][key])
-    #         if datelike_type:
-    #             try:
-    #                 date_val = record[key]
-    #                 date_val = parser.parse(date_val)
-    #             except Exception as ex:
-    #                 date_val = handle_invalid_timestamp_in_record(
-    #                     record,
-    #                     [key],
-    #                     date_val,
-    #                     datelike_type,
-    #                     ex,
-    #                     treatment,
-    #                     self.logger,
-    #                 )
-    #             record[key] = date_val
+        value = self.config.get("datetime_error_treatment", "error")
+        return DatetimeErrorTreatmentEnum[value.upper()]
 
     def drain(self, records_to_drain: List[dict]) -> None:
         """Write any prepped records out and return only once fully written."""
@@ -104,6 +68,12 @@ class AthenaSink(Sink):
         object_format = self.config.get("object_format")
         delimiter = self.config.get("delimiter", ",")
         quotechar = self.config.get("quotechar", '"')
+        add_metadata_columns = self.config.get("add_metadata_columns", False)
+
+        if add_metadata_columns:
+            self.schema['properties']['_sdc_extracted_at'] = {'type': ['null', 'string'],'format': 'date-time'}
+            self.schema['properties']['_sdc_batched_at'] = {'type': ['null', 'string'],'format': 'date-time'}
+            self.schema['properties']['_sdc_deleted_at'] = {'type': ['null', 'string']}
 
         # Use the system specific temp directory if no custom temp_dir provided
         temp_dir = os.path.expanduser(
@@ -161,7 +131,7 @@ class AthenaSink(Sink):
                 self.logger.warn(f"Unrecognized format: '{object_format}'")
 
         # Create schemas in Athena
-        self.logger.info("headers: {}".format(headers))
+        #self.logger.info("headers: {}".format(headers))
         data_location = "s3://{s3_bucket}/{key_prefix}{database}/{stream}/".format(
             s3_bucket=self.config.get("s3_bucket"),
             key_prefix=self.config.get("s3_key_prefix", ""),
@@ -181,7 +151,7 @@ class AthenaSink(Sink):
             ddl = athena.generate_create_table_ddl(
                 self.stream_name,
                 self.schema,
-                headers=headers,
+                headers=None,
                 database=self.config.get("athena_database"),
                 data_location=data_location,
                 skip_header=False,

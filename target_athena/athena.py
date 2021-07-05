@@ -97,61 +97,61 @@ def generate_column_definitions(schema, level=0):
     new_level = level + 1
     indentation = new_level * tab
     for name, attributes in schema.items():
-        cleaned_name = "`{}`".format(name)  # if name.lower() in keywords else name
-        if attributes["type"] == "object":
-            field_definitions.append(
-                "{indentation}{name}{separator}STRUCT<\n{definitions}\n{indentation}>".format(
-                    indentation=indentation,
-                    name=cleaned_name,
-                    separator=type_separator,
-                    definitions=generate_column_definitions(
-                        attributes["properties"], new_level
-                    ),
+        cleaned_name = "`{}`".format(name) #if name.lower() in keywords else name
+        if attributes.get("type",None) is not None:
+            if attributes["type"] == "object":
+                field_definitions.append(
+                    "{indentation}{name}{separator}STRUCT<\n{definitions}\n{indentation}>".format(
+                        indentation=indentation,
+                        name=cleaned_name,
+                        separator=type_separator,
+                        definitions=generate_column_definitions(
+                            attributes["properties"], new_level
+                        ),
+                    )
                 )
-            )
-        elif attributes["type"] == "array":
-            extra_indentation = (new_level + 1) * tab
-            if attributes["items"]["type"] == "object":
-                closing_bracket = "\n" + indentation + ">"
-                array_type = "STRUCT<\n{definitions}\n{indentation}>".format(
-                    indentation=extra_indentation,
-                    definitions=generate_column_definitions(
-                        attributes["items"]["properties"], new_level + 1
-                    ),
+            elif attributes["type"] == "array":
+                extra_indentation = (new_level + 1) * tab
+                if attributes["items"]["type"] == "object":
+                    closing_bracket = "\n" + indentation + ">"
+                    array_type = "STRUCT<\n{definitions}\n{indentation}>".format(
+                        indentation=extra_indentation,
+                        definitions=generate_column_definitions(
+                            attributes["items"]["properties"], new_level + 1
+                        ),
+                    )
+                else: # This might need handling as elif isinstance(attributes["type"], list):
+                    closing_bracket = ">"
+                    #array_type = attributes["items"]["type"].upper()
+                    array_type = [_ for _ in attributes["items"]["type"] if _ != "null"][0]
+                field_definitions.append(
+                    "{indentation}{name}{separator}ARRAY<{definitions}{closing_bracket}".format(
+                        indentation=indentation,
+                        name=cleaned_name,
+                        separator=type_separator,
+                        definitions=array_type,
+                        closing_bracket=closing_bracket,
+                    )
+                )
+            elif isinstance(attributes["type"], list):
+                types = [_ for _ in attributes["type"] if _ != "null"]
+                field_definitions.append(
+                    "{indentation}{name}{separator}{type}".format(
+                        indentation=indentation,
+                        name=cleaned_name,
+                        separator=type_separator,
+                        type=types[0]
+                    )
                 )
             else:
-                closing_bracket = ">"
-                array_type = attributes["items"]["type"].upper()
-            field_definitions.append(
-                "{indentation}{name}{separator}ARRAY<{definitions}{closing_bracket}".format(
-                    indentation=indentation,
-                    name=cleaned_name,
-                    separator=type_separator,
-                    definitions=array_type,
-                    closing_bracket=closing_bracket,
+                field_definitions.append(
+                    "{indentation}{name}{separator}{type}".format(
+                        indentation=indentation,
+                        name=cleaned_name,
+                        separator=type_separator,
+                        type=attributes['type']
+                    )
                 )
-            )
-        elif isinstance(attributes["type"], list):
-            types = [_ for _ in attributes["type"] if _ != "null"]
-            field_definitions.append(
-                "{indentation}{name}{separator}{type}".format(
-                    indentation=indentation,
-                    name=cleaned_name,
-                    separator=type_separator,
-                    type="STRING"
-                    # type=types[0].upper()
-                )
-            )
-        else:
-            field_definitions.append(
-                "{indentation}{name}{separator}{type}".format(
-                    indentation=indentation,
-                    name=cleaned_name,
-                    separator=type_separator,
-                    # type=attributes['type'].upper()
-                    type="STRING",
-                )
-            )
     return field_separator.join(field_definitions)
 
 def generate_create_database_ddl(
@@ -219,7 +219,7 @@ def create_or_replace_table(
     data_location="",
     database="default",
     external=True,
-    row_format="org.apache.hadoop.hive.serde2.OpenCSVSerde",
+    row_format="org.apache.hadoop.hive.serde2.OpenCSVSerde", #org.apache.hive.hcatalog.data.JsonSerDe
     skip_header = True,
 ):
     if table_exists(athena_client=client, database=database, table_name=table):
